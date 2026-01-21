@@ -1,5 +1,4 @@
 from dotenv import load_dotenv
-from langchain import tools
 from langchain.tools import tool
 from langchain_core.prompts import PromptTemplate
 from langchain_core.tools import render_text_description
@@ -16,31 +15,38 @@ def get_text_length(text: str) -> int:
 
 if __name__ == "__main__":
     print("Hello react langchain")
-    print(get_text_length(text="Hello, world!"))
+
+    # Create a list of tools
+    tools_list = [get_text_length]  # Use your actual tool instance
 
     template = """
-    Answer the following questions as best you can. You have access to the following tools:
+        Answer the following questions as best you can. You have access to the following tools:
 
-    {tools}
+        {tools}
 
-    Use the following format:
+        Use the following format:
 
-    Question: the input question you must answer
-    Thought: you should always think about what to do
-    Action: the action to take, should be one of [{tool_names}]
-    Action Input: the input to the action
-    Observation: the result of the action
-    ... (this Thought/Action/Action Input/Observation can repeat N times)
-    Thought: I now know the final answer
-    Final Answer: the final answer to the original input question
+        Question: the input question you must answer
+        Thought: you should always think about what to do
+        Action: the action to take, should be one of [{tool_names}]
+        Action Input: the input to the action
+        Observation: the result of the action
+        ... (this Thought/Action/Action Input/Observation can repeat N times)
+        Thought: I now know the final answer
+        Final Answer: the final answer to the original input question
 
-    Begin!
+        Begin!
 
-    Question: {input}
-    """
+        Question: {input}
+        Thought:
+        """
 
-    prompt = PromptTemplate.from_template(template=template).partial(tools=render_text_description(tools),
-                                                                     tool_names=", ".join([t.name for t in tools]))
+    prompt = PromptTemplate.from_template(template=template).partial(
+        tools=render_text_description(tools_list),  # Use tools_list instead of tools module
+        tool_names=", ".join([t.name for t in tools_list]),  # Use tools_list instead of tools module
+    )
 
-    llm = ChatGoogleGenerativeAI(temperature=0, stop=["\nObservation:"])
+    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0, stop=["\nObservation"])
     agent = {"input": lambda x: x["input"]} | prompt | llm
+    res = agent.invoke({"input": "What is the length of the text 'Hello, world!'?"})
+    print(res)
