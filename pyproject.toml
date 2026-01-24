@@ -1,0 +1,17 @@
+[project]
+name = "langchain-learning"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "black>=26.1.0",
+    "google-generativeai>=0.8.6",
+    "isort>=7.0.0",
+    "langchain>=1.2.7",
+    "langchain-community>=0.4.1",
+    "langchain-google-genai>=4.2.0",
+    "langchain-openai>=1.1.7",
+    "langchain-pinecone>=0.2.13",
+    "python-dotenv>=1.2.1",
+]
