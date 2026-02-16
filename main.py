@@ -23,11 +23,6 @@ class AgentResponse(BaseModel):
         default_factory=list, description="List of sources used to generate the answer"
     )
 
-
-# 1. Initialize the Tavily Search tool
-tavily_search_tool = TavilySearch()
-
-
 @tool
 def search(query: str) -> str:
     """
@@ -40,6 +35,8 @@ def search(query: str) -> str:
     print(f"Searching for: {query}")
     return "hard coded response"
 
+# 1. Initialize the Tavily Search tool
+tavily_search_tool = TavilySearch()
 
 llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
 tools = [tavily_search_tool]
