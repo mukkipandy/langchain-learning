@@ -1,8 +1,10 @@
-import re
+from typing import List, Union
 
 from dotenv import load_dotenv
+from langchain_classic.agents.output_parsers import ReActSingleInputOutputParser
+from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.prompts import PromptTemplate
-from langchain_core.tools import render_text_description, tool
+from langchain_core.tools import Tool, render_text_description, tool
 from langchain_groq import ChatGroq
 
 load_dotenv()
@@ -17,6 +19,13 @@ def get_text_length(text: str) -> int:
     )
 
     return len(text)
+
+
+def find_tool_by_name(tools: List[Tool], tool_name: str) -> Tool:
+    for tool in tools:
+        if tool.name == tool_name:
+            return tool
+    raise ValueError(f"Tool wtih name {tool_name} not found")
 
 
 if __name__ == "__main__":
@@ -52,58 +61,27 @@ if __name__ == "__main__":
 
     llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0, stop=["\nObservation", "Observation"])
 
-    # Create a chain that combines prompt and LLM
-    chain = prompt | llm
+    intermediate_steps = []
+    agent = (
+            {
+                "input": lambda x: x["input"],
+            }
+            | prompt
+            | llm
+            | ReActSingleInputOutputParser()
+    )
 
-    # Create a tool map for easy lookup
-    tool_map = {tool.name: tool for tool in tools}
+    agent_step: Union[AgentAction, AgentFinish] = agent.invoke(
+        {
+            "input": "What is the length of 'DOG' in characters?",
+        }
+    )
+    print(agent_step)
 
+    if isinstance(agent_step, AgentAction):
+        tool_name = agent_step.tool
+        tool_to_use = find_tool_by_name(tools, tool_name)
+        tool_input = agent_step.tool_input
 
-    # ReAct agent loop
-    def run_agent(input_text: str, max_iterations: int = 3):
-        """Run the ReAct agent loop"""
-        agent_input = {"input": input_text}
-        i = 0
-
-        while i < max_iterations:
-            i += 1
-            print(f"\n--- Iteration {i} ---")
-
-            # Get response from LLM
-            response = chain.invoke(agent_input)
-            agent_input["agent_scratchpad"] = response.content
-            print(f"LLM Response:\n{response.content}")
-
-            # Parse the response to extract action
-            action_match = re.search(r"Action\s*:\s*(\w+)", response.content)
-            action_input_match = re.search(r"Action\s*Input\s*:\s*(.*?)(?:\n|$)", response.content)
-
-            if not action_match:
-                # No action found, assume final answer
-                print("No action found. Agent finished.")
-                final_answer_match = re.search(r"Final\s*Answer\s*:\s*(.*?)$", response.content, re.DOTALL)
-                if final_answer_match:
-                    print(f"Final Answer: {final_answer_match.group(1).strip()}")
-                break
-
-            action = action_match.group(1)
-            action_input = action_input_match.group(1).strip() if action_input_match else ""
-
-            print(f"Action: {action}")
-            print(f"Action Input: {action_input}")
-
-            # Execute the tool
-            if action in tool_map:
-                tool_result = tool_map[action].invoke(action_input)
-                print(f"Observation: {tool_result}")
-
-                # Append to scratchpad
-                agent_input["agent_scratchpad"] += f"\nObservation: {tool_result}\nThought: "
-            else:
-                print(f"Unknown action: {action}")
-                break
-
-
-    # Example usage
-    user_question = "What is the length of the text 'Hello World'?"
-    run_agent(user_question)
+        observation = tool_to_use.func(str(tool_input))
+        print(f"{observation=}")
