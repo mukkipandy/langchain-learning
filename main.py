@@ -34,7 +34,7 @@ def main():
 
     # 2. USE A VALID MODEL NAME (e.g., "gpt-4o", "gpt-3.5-turbo")
     #llm = ChatOpenAI(temperature=0, model="gpt-4o")  # Changed parameter name
-    llm = ChatOllama(temperature=1, model="gemma3:270m")  # Example for Ollama
+    llm = ChatOllama(temperature=0, model="gemma3:270m")  # Example for Ollama
 
     chain = summary_prompt_template | llm
 
