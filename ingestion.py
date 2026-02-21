@@ -19,14 +19,18 @@ def main():
     texts = text_splitter.split_documents(document)
     print(f"Splitted into {len(texts)} chunks.")
 
-    # embeddings = OpenAIEmbeddings(openai_api_key=os.environ.get("OPENAI_API_KEY"))
     embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
 
     print("ingesting...")
+    index_name = os.environ.get("INDEX_NAME")
+    if not index_name:
+        raise ValueError("INDEX_NAME environment variable is not set. Please add it to your .env file.")
+
     PineconeVectorStore.from_documents(
-        texts, embeddings, index_name=os.environ["INDEX_NAME"]
+        texts, embeddings, index_name=index_name
     )
     print("finish")
+
 
 if __name__ == "__main__":
     main()
