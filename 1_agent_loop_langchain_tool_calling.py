@@ -8,6 +8,8 @@ from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from langsmith import traceable
 
 MAX_ITERATIONS = 10
+
+
 # MODEL = "qwen3.5:2b"
 # MODEL = "gemma3:270m"
 
@@ -69,7 +71,6 @@ def run_agent(question: str):
         print(f"\n--- Iteration {iteration} ---")
 
         ai_message = llm_with_tools.invoke(messages)
-
         tool_calls = ai_message.tool_calls
 
         # If no tool calls, this is the final answer
